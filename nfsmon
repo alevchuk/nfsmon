@@ -16,12 +16,13 @@ class Integer
   def rj; self.to_s.rjust(2, '0') end
 end
 
-def debug(mystructure)
-  STDERR.puts(
-    mystructure.collect do |x, count|
-      "#{x[:y]}-#{x[:month].rj}-#{x[:d].rj} #{x[:h].rj}:#{x[:m].rj} #{count}"
-    end.sort.reverse
-  )
+def custom_to_s(x) # To sring
+  "#{x[:y]}-#{x[:month].rj}-#{x[:d].rj} #{x[:h].rj}:#{x[:m].rj}"
+end
+
+def debug(j) # j is a custom structure - a hash of hashes
+  STDERR.puts j.collect {|x, count| "#{custom_to_s(x)} #{count}"}.sort.reverse
+  STDERR.puts
 end
 
 
@@ -46,6 +47,7 @@ end
 def get_expected(page)
   t_now = Time.now
   range = (t_now - (ROWS - 1) * 60)..(t_now)
+
   range.step(60).to_a.reverse.collect do |t|
     {:y=>t.year, :month=>t.month, :d=>t.day, :h=>t.hour, :m=>t.min}
   end
@@ -53,16 +55,17 @@ end
 
 
 debug get_actual
-puts
 debug get_expected(1)
 
-#loop do
-#  actual = get_actual
-#  expected = get_expected
-#
-#  unfinished = (i == 0 ? '...' : '')
-#  puts "#{t_str} " + "*" * ACTUAL[t_str] + unfinished +
-#    " #{ACTUAL[t_str].to_s.rjust(2,'0')}"
-#
-#  sleep 10
-#end
+loop do
+  actual = get_actual
+  expected = get_expected(1).sort{|x,y| custom_to_s(y) <=> custom_to_s(x)}
+
+  expected.each_with_index do |x, index|
+    unfinished = (index == 0 ? '...' : '')
+    puts "#{x[:h].rj}:#{x[:m].rj} " + "*" * actual[x] + unfinished +
+      " #{actual[x].to_s.rjust(2,'0')}"
+  end
+
+  sleep 10
+end
