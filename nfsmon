@@ -9,35 +9,60 @@ if ARGV.size != 1
 end
 PROBE_DIR = ARGV[0]
 
-SCREENS = 1
-
-
 COLS = `tput cols`.to_i
-ROWS = (`tput lines`.to_i - 1) * SCREENS
+ROWS = (`tput lines`.to_i - 1)
 
-
-ACTUAL = Hash.new(0)
-lineno = 0
-`cat #{PROBE_DIR}/log | cut -f1 | uniq -c`.each_line do |line|
-  count, timestamp = line.split(' ')
-  date, time = timestamp.split('_')
-  h,m = time.split('-')
-
-  p [count, date, h,m]
-  #ACTUAL["#{h}:#{m}"] = count.to_i
+class Integer
+  def rj; self.to_s.rjust(2, '0') end
 end
 
-exit
+def debug(mystructure)
+  STDERR.puts(
+    mystructure.collect do |x, count|
+      "#{x[:y]}-#{x[:month].rj}-#{x[:d].rj} #{x[:h].rj}:#{x[:m].rj} #{count}"
+    end.sort.reverse
+  )
+end
 
 
-t_now = Time.now
-EXPECTED =
-  ((t_now - (ROWS - 1) * 60)..(t_now)).step(60).to_a.reverse.collect do |t|
-    "#{t.hour.to_s.rjust(2, '0')}:#{t.min.to_s.rjust(2, '0')}"
+
+def get_actual
+  actual = Hash.new(0)
+  `cat #{PROBE_DIR}/log | cut -f1 | uniq -c`.each_line do |line|
+    count, timestamp = line.split(' ')
+    date, time = timestamp.split('_')
+  
+    y,month,d = date.split('-')
+    h,m = time.split('-')
+
+    y=y.to_i; month=month.to_i; d=d.to_i; h=h.to_i; m=m.to_i; count=count.to_i
+
+    actual[{:y=>y, :month=>month, :d=>d, :h=>h, :m=>m}] = count
   end
-
-EXPECTED.each_with_index do |t_str, i|
-  unfinished = (i == 0 ? '...' : '')
-  puts "#{t_str} " + "*" * ACTUAL[t_str] + unfinished +
-    " #{ACTUAL[t_str].to_s.rjust(2,'0')}"
+  
+  actual
 end
+
+def get_expected(page)
+  t_now = Time.now
+  range = (t_now - (ROWS - 1) * 60)..(t_now)
+  range.step(60).to_a.reverse.collect do |t|
+    {:y=>t.year, :month=>t.month, :d=>t.day, :h=>t.hour, :m=>t.min}
+  end
+end
+
+
+debug get_actual
+puts
+debug get_expected(1)
+
+#loop do
+#  actual = get_actual
+#  expected = get_expected
+#
+#  unfinished = (i == 0 ? '...' : '')
+#  puts "#{t_str} " + "*" * ACTUAL[t_str] + unfinished +
+#    " #{ACTUAL[t_str].to_s.rjust(2,'0')}"
+#
+#  sleep 10
+#end
