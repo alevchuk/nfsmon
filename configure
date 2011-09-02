@@ -1,9 +1,0 @@
-#!/bin/bash
-
-# $prefix/var/log/pstm
-# $prefix/var/run/pstm.pid
-# $prefix/usr/sbin
-
-
-# > ./install
-# chmod +x ./install

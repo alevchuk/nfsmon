@@ -1,19 +1,20 @@
 #!/usr/bin/env ruby
 
-GITDIR = "/home_girkelab/alevchuk/020-ib-nfs-failure/#{`hostname`.chomp}/.git"
+GITDIR = "#{ARGV[0]}/#{`hostname`.chomp}/.git"
 
-SCREENS = if ARGV.size > 0
-  ARGV[0].to_i
-else
-  1
-end
+SCREENS = 1
+#if ARGV.size > 0
+#  ARGV[0].to_i
+#else
+#  1
+#end
 
 
 COLS = `tput cols`.to_i
 ROWS = (`tput lines`.to_i - 1) * SCREENS
 
 
-cmd =
+cmd = 
   "git --git-dir=#{GITDIR} log -n #{ROWS * 60} | grep Date | awk '{print $5}'"
 
 ACTUAL = Hash.new(0)
@@ -34,4 +35,8 @@ EXPECTED =
     "#{t.hour.to_s.rjust(2, '0')}:#{t.min.to_s.rjust(2, '0')}"
   end
 
-EXPECTED.each {|t_str| puts t_str + " " + "*" * ACTUAL[t_str]}
+EXPECTED.each_with_index do |t_str, i|
+  unfinished = (i == 0 ? '...' : '')
+  puts "#{t_str} " + "*" * ACTUAL[t_str] + unfinished +
+    " #{ACTUAL[t_str].to_s.rjust(2,'0')}"
+end
