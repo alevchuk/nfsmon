@@ -2,7 +2,7 @@
 
 if [ $# -ne 1 ]; then
   (
-    echo "ERROR: Invalid arguments"
+    echo "ERROR: Invalid number of arguments $#"
     echo "Usage: $0 <prob-directory>"
     echo ""
     echo "<prob-directory>  is where you want pstmd to ls and write the log"
@@ -17,7 +17,7 @@ cd $MON_HOME
 
 while :; do
   ls . > /dev/null
-  date | tee -a log
+  date "+%Y-%m-%d_%H-%M%t%S" | tee -a log
 
   sleep 1
 done

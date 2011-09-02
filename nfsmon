@@ -1,32 +1,33 @@
 #!/usr/bin/env ruby
 
-GITDIR = "#{ARGV[0]}/#{`hostname`.chomp}/.git"
+if ARGV.size != 1
+  STDERR.puts "ERROR: Invalid number of arguments #{ARGV.size}"
+  STDERR.puts "Usage: #{File.basename(__FILE__)} <probe-directory>"
+  STDERR.puts ""
+  STDERR.puts "  <probe-directory>  is where pstmd is running"
+  exit 1
+end
+PROBE_DIR = ARGV[0]
 
 SCREENS = 1
-#if ARGV.size > 0
-#  ARGV[0].to_i
-#else
-#  1
-#end
 
 
 COLS = `tput cols`.to_i
 ROWS = (`tput lines`.to_i - 1) * SCREENS
 
 
-cmd = 
-  "git --git-dir=#{GITDIR} log -n #{ROWS * 60} | grep Date | awk '{print $5}'"
-
 ACTUAL = Hash.new(0)
 lineno = 0
-`#{cmd} | awk -F: '{print $1, $2}' | uniq -c`.each_line do |line|
-  lineno += 1
-  break if lineno == ROWS
+`cat #{PROBE_DIR}/log | cut -f1 | uniq -c`.each_line do |line|
+  count, timestamp = line.split(' ')
+  date, time = timestamp.split('_')
+  h,m = time.split('-')
 
-  c, h, m = line.split(' ')
-  ACTUAL["#{h}:#{m}"] = c.to_i
+  p [count, date, h,m]
+  #ACTUAL["#{h}:#{m}"] = count.to_i
 end
 
+exit
 
 
 t_now = Time.now
