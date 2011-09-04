@@ -9,8 +9,13 @@ if ARGV.size != 1
 end
 PROBE_DIR = ARGV[0]
 
-COLS = `tput cols`.to_i
-ROWS = (`tput lines`.to_i - 1)
+def get_terminal_dimentions
+  @COLS = `tput cols`.to_i
+  @ROWS = (`tput lines`.to_i - 1)
+end
+
+get_terminal_dimentions
+#Thread.new {loop {get_terminal_dimentions; sleep 0.3}}
 
 class Integer
   def rj; self.to_s.rjust(2, '0') end
@@ -46,7 +51,7 @@ end
 
 def get_expected(page)
   t_now = Time.now
-  range = (t_now - (ROWS - 1) * 60)..(t_now)
+  range = (t_now - (@ROWS - 1) * 60)..(t_now)
 
   range.step(60).to_a.reverse.collect do |t|
     {:y=>t.year, :month=>t.month, :d=>t.day, :h=>t.hour, :m=>t.min}
@@ -54,18 +59,33 @@ def get_expected(page)
 end
 
 
-debug get_actual
-debug get_expected(1)
+#debug get_actual
+#debug get_expected(1)
+
+
+CLEAR = `tput clear`
+TO_TOP =  `tput cup 0 0`
+def fill_screen; @ROWS.times {puts " " * @COLS}; end
+
+fill_screen
+print TO_TOP
 
 loop do
   actual = get_actual
   expected = get_expected(1).sort{|x,y| custom_to_s(y) <=> custom_to_s(x)}
+  get_terminal_dimentions
+
+  print TO_TOP
+  fill_screen
+  print TO_TOP
 
   expected.each_with_index do |x, index|
-    unfinished = (index == 0 ? '...' : '')
-    puts "#{x[:h].rj}:#{x[:m].rj} " + "*" * actual[x] + unfinished +
+    num_stars = actual[x]
+    unfinished = ((index == 0 and num_stars < 59) ? '...' : '')
+    line = "#{x[:h].rj}:#{x[:m].rj} " + "*" * num_stars + unfinished +
       " #{actual[x].to_s.rjust(2,'0')}"
+    puts line
   end
 
-  sleep 10
+  sleep 1
 end
