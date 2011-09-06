@@ -1,5 +1,14 @@
 #!/usr/bin/env ruby
 
+
+require 'curses'
+
+Curses.noecho # do not show typed keys
+Curses.init_screen
+Curses.stdscr.keypad(true) # enable arrow keys (required for pageup/down)
+Curses.stdscr.nodelay = 1
+
+
 trap("INT"){ exit } 
 
 if ARGV.size != 1
@@ -53,7 +62,7 @@ end
 
 def get_expected(page)
   t_now = Time.now
-  range = (t_now - (@ROWS - 1) * 60)..(t_now)
+  range = (t_now - @ROWS * 60 * page)..(t_now - @ROWS * 60 * (page - 1))
 
   range.step(60).to_a.reverse.collect do |t|
     {:y=>t.year, :month=>t.month, :d=>t.day, :h=>t.hour, :m=>t.min}
@@ -65,29 +74,70 @@ end
 #debug get_expected(1)
 
 
-CLEAR = `tput clear`
-TO_TOP =  `tput cup 0 0`
-def fill_screen; @ROWS.times {puts " " * @COLS}; end
 
-fill_screen
-print TO_TOP
+Curses.clear
+Curses.setpos(0,0)
+
+page = 1
 
 loop do
-  actual = get_actual
-  expected = get_expected(1).sort{|x,y| custom_to_s(y) <=> custom_to_s(x)}
+
   get_terminal_dimentions
 
-  print TO_TOP
-  fill_screen
-  print TO_TOP
+  c = Curses.getch
+
+  if c == Curses::Key::PPAGE
+    if page == 1
+      Curses.clear
+      sleep 0.1
+      next
+    end
+    page -= 1
+  end
+
+  if c == Curses::Key::NPAGE
+    page += 1
+  end
+
+  #when Curses::Key::UP
+  #  Curses.setpos(0,0)
+  #  Curses.clear
+  #  Curses.addstr "UP"
+  #  Curses.refresh
+
+  if c == Curses::Key::DOWN
+    Curses.setpos(0,0)
+    Curses.clear
+    Curses.addstr "DOWN"
+    Curses.refresh
+
+  elsif c == 10 or c == 32 # Enter or space
+    Curses.setpos(0,0)
+    Curses.clear
+    Curses.addstr "ENTER"
+    Curses.refresh
+
+  else
+
+
+  actual = get_actual
+  expected = get_expected(page).sort{|x,y| custom_to_s(y) <=> custom_to_s(x)}
+
+  Curses.clear
+  Curses.setpos(0,0)
 
   expected.each_with_index do |x, index|
     num_stars = actual[x]
     unfinished = ((index == 0 and num_stars < 59) ? '...' : '')
     line = "#{x[:h].rj}:#{x[:m].rj} " + "*" * num_stars + unfinished +
       " #{actual[x].to_s.rjust(2,'0')}"
-    puts line
+    #Curses.addstr(c.inspect + " ")
+    Curses.addstr(line + "\n")
+  end
+  Curses.refresh
+
+
   end
 
-  sleep 0.05
+  sleep 0.03
 end
