@@ -89,7 +89,6 @@ loop do
   if c == Curses::Key::PPAGE
     if page == 1
       Curses.clear
-      sleep 0.1
       next
     end
     page -= 1
@@ -97,6 +96,14 @@ loop do
 
   if c == Curses::Key::NPAGE
     page += 1
+  end
+
+  if c == Curses::Key::HOME
+    page = 1
+  end
+
+  if c == 113 # q
+    exit 0
   end
 
   #when Curses::Key::UP
