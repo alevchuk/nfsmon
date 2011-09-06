@@ -1,5 +1,7 @@
 #!/usr/bin/env ruby
 
+trap("INT"){ exit } 
+
 if ARGV.size != 1
   STDERR.puts "ERROR: Invalid number of arguments #{ARGV.size}"
   STDERR.puts "Usage: #{File.basename(__FILE__)} <probe-directory>"
@@ -7,7 +9,7 @@ if ARGV.size != 1
   STDERR.puts "  <probe-directory>  is where pstmd is running"
   exit 1
 end
-PROBE_DIR = ARGV[0]
+PROBE_DIR = File.directory?(ARGV[0]) ? ARGV[0] : File.dirname(ARGV[0])
 
 def get_terminal_dimentions
   @COLS = `tput cols`.to_i
@@ -87,5 +89,5 @@ loop do
     puts line
   end
 
-  sleep 1
+  sleep 0.05
 end
