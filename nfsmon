@@ -204,7 +204,7 @@ loop do
 
 
   # Computationally intensive operation
-  if loop_count % 20 == 0 and page == 1
+  if loop_count % 100 == 0 and page == 1
     read_log(page)
   end
 
