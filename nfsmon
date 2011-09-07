@@ -21,7 +21,26 @@ if !File.file?(PROBE_FILE) and !File.symlink?(PROBE_FILE)
   exit 1
 end
 
-LOGFILE_PREFIX = "/srv/projects/zeus_log/nfs-fileio"
+
+# This is the only part that is not generic
+# it's specific to UCR Bioinfo storage site and
+# how the server-side CRON were installed
+mount_info = `df -P #{PROBE_FILE}`.split("\n").last
+
+LOGFILE_PREFIX = if mount_info =~ /^zeus/
+  "/srv/projects/zeus_log/nfs-fileio"
+elsif mount_info =~ /^tern/
+  "/srv/zpools/tern.ib_bigdata/tern_log/nfs-fileio"
+else
+  STDERR.puts "WARNING: I don't know which NFS server you need"
+  STDERR.puts "WARNING: Defaulting to Tern"
+
+  STDERR.puts "Press Enter to continue"
+  gets
+  "/srv/zpools/tern.ib_bigdata/tern_log/nfs-fileio"
+end
+
+
 
 def get_terminal_dimentions
   @COLS = `tput cols`.to_i
