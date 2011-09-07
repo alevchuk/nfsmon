@@ -76,10 +76,12 @@ end
 
 def get_expected(page)
   t_now = Time.now
-  start_time = t_now - @ROWS * 60 * page + (page - 1) * 60
-  end_time   = t_now - @ROWS * 60 * (page - 1) + (page - 1) * 60
+  start_time = t_now - @ROWS * 60 * page       + (page - 1) * 2 * 60 # bottom
+  end_time   = t_now - @ROWS * 60 * (page - 1) + (page - 1) * 2 * 60 # top
 
-  (start_time..end_time).step(60).to_a.reverse.collect do |t|
+  lines = (start_time..end_time).step(60).to_a
+  lines = lines[1..-1] # cut the oldest one - leave space for status bar
+  lines.reverse.collect do |t|
     {:y=>t.year, :month=>t.month, :d=>t.day, :h=>t.hour, :m=>t.min}
   end
 end
@@ -127,22 +129,22 @@ loop do
 
   if c == Curses::Key::HOME
     page = 1
-    selected_line = @ROWS
+    selected_line = 0
     @expected = get_expected(page)
   end
 
-  if c == Curses::Key::UP
+  if c == Curses::Key::UP or c == 107 # up k
     if selected_line != 0
       selected_line -= 1 
     elsif page != 1
-      selected_line = @ROWS
+      selected_line = @ROWS - 1
       page -= 1
       @expected = get_expected(page)
     end
   end
 
-  if c == Curses::Key::DOWN
-    if selected_line != @ROWS
+  if c == Curses::Key::DOWN or c == 106 # down j
+    if selected_line != @ROWS - 1
       selected_line += 1
     else
       selected_line = 0
@@ -154,7 +156,7 @@ loop do
 
   if c == 10 or c == 32 # Enter or space
     t_list = @expected.sort{|i1,i2| custom_to_s(i1) <=> custom_to_s(i2)}
-    t = t_list[@ROWS - selected_line]
+    t = t_list[@ROWS - 1 - selected_line]
     
     file = "#{LOGFILE_PREFIX}-#{custom_to_log_format(t)}"
     Curses.close_screen
@@ -178,7 +180,7 @@ loop do
     line = "#{x[:h].rj}:#{x[:m].rj} " + "*" * num_stars + unfinished +
       " #{@actual[x].to_s.rjust(2,'0')}"
 
-    line_final = line.ljust(@COLS - 3) 
+    line_final = line.ljust(60 + 9) 
     if index == selected_line
       Curses.standout
       Curses.addstr "|" + line_final + "|\n"
@@ -187,6 +189,8 @@ loop do
       Curses.addstr " " + line_final + "\n"
     end
   end
+  l = @expected.last
+  Curses.addstr " #{custom_to_s(l)}\n"
 
   get_terminal_dimentions
 
