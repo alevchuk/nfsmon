@@ -15,7 +15,12 @@ if ! [1,2].include?(ARGV.size)
   STDERR.puts " [<jump-to-date>]   Date in YYYY-MM-DD format (Optional)"
   exit 1
 end
-PROBE_DIR = File.directory?(ARGV[0]) ? ARGV[0] : File.dirname(ARGV[0])
+PROBE_FILE = ARGV[0]
+if !File.file?(PROBE_FILE) and !File.symlink?(PROBE_FILE)
+  STDERR.puts "ERROR: File does not exist #{PROBE_FILE}"
+  exit 1
+end
+
 LOGFILE_PREFIX = "/srv/projects/zeus_log/nfs-fileio"
 
 def get_terminal_dimentions
@@ -71,7 +76,7 @@ end
 
 def get_actual
   actual = Hash.new(0)
-  `cat #{PROBE_DIR}/log | cut -f1 | uniq -c`.each_line do |line|
+  `cat #{PROBE_FILE} | cut -f1 | uniq -c`.each_line do |line|
     count, timestamp = line.split(' ')
     date, time = timestamp.split('_')
   
