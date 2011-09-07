@@ -3,6 +3,8 @@
 
 require 'curses'
 
+
+
 Curses.noecho # do not show typed keys
 Curses.init_screen
 Curses.stdscr.keypad(true) # enable arrow keys (required for pageup/down)
@@ -19,6 +21,8 @@ if ARGV.size != 1
   exit 1
 end
 PROBE_DIR = File.directory?(ARGV[0]) ? ARGV[0] : File.dirname(ARGV[0])
+LOGFILE_PREFIX = "/srv/projects/zeus_log/nfs-fileio"
+
 
 def get_terminal_dimentions
   @COLS = `tput cols`.to_i
@@ -30,6 +34,10 @@ get_terminal_dimentions
 
 class Integer
   def rj; self.to_s.rjust(2, '0') end
+end
+
+def custom_to_log_format(x) # To sring
+  "#{x[:y]}-#{x[:month].rj}-#{x[:d].rj}_#{x[:h].rj}-#{x[:m].rj}"
 end
 
 def custom_to_s(x) # To sring
@@ -79,6 +87,16 @@ Curses.clear
 Curses.setpos(0,0)
 
 page = 1
+selected_line = 0
+loop_count = 0
+@actual = nil
+@expected = nil
+@current_lines = nil
+
+def read_log(page)
+  @actual = get_actual
+  @expected = get_expected(page)
+end
 
 loop do
 
@@ -86,65 +104,62 @@ loop do
 
   c = Curses.getch
 
+  exit 0 if c == 113 # q
+
   if c == Curses::Key::PPAGE
     if page == 1
       Curses.clear
       next
     end
     page -= 1
+    read_log(page)
   end
 
-  if c == Curses::Key::NPAGE
-    page += 1
+  (page += 1; selected_line = 0; read_log(page)) if c == Curses::Key::NPAGE
+  (page = 1; selected_line = 0; read_log(page)) if c == Curses::Key::HOME
+
+  (selected_line -= 1) if c == Curses::Key::UP and selected_line != 0
+  (selected_line += 1) if c == Curses::Key::DOWN and selected_line != @ROWS
+
+
+  if c == 10 or c == 32 # Enter or space
+    t_list = @expected.sort{|i1,i2| custom_to_s(i1) <=> custom_to_s(i2)}
+    t = t_list[@ROWS - selected_line]
+    
+    file = "#{LOGFILE_PREFIX}-#{custom_to_log_format(t)}"
+    system "less -NS #{file}"
+
+    Curses.stdscr.keypad(true) # Resore Curses environment
   end
 
-  if c == Curses::Key::HOME
-    page = 1
+
+  # Computationally intensive operation
+  if loop_count % 20 == 0
+    read_log(page)
   end
-
-  if c == 113 # q
-    exit 0
-  end
-
-  #when Curses::Key::UP
-  #  Curses.setpos(0,0)
-  #  Curses.clear
-  #  Curses.addstr "UP"
-  #  Curses.refresh
-
-  if c == Curses::Key::DOWN
-    Curses.setpos(0,0)
-    Curses.clear
-    Curses.addstr "DOWN"
-    Curses.refresh
-
-  elsif c == 10 or c == 32 # Enter or space
-    Curses.setpos(0,0)
-    Curses.clear
-    Curses.addstr "ENTER"
-    Curses.refresh
-
-  else
-
-
-  actual = get_actual
-  expected = get_expected(page).sort{|x,y| custom_to_s(y) <=> custom_to_s(x)}
 
   Curses.clear
   Curses.setpos(0,0)
 
-  expected.each_with_index do |x, index|
-    num_stars = actual[x]
-    unfinished = ((index == 0 and num_stars < 59) ? '...' : '')
+  @expected.each_with_index do |x, index|
+    num_stars = @actual[x]
+    unfinished = ((index == 0 and num_stars < 58) ? '...' : '')
     line = "#{x[:h].rj}:#{x[:m].rj} " + "*" * num_stars + unfinished +
-      " #{actual[x].to_s.rjust(2,'0')}"
+      " #{@actual[x].to_s.rjust(2,'0')}"
     #Curses.addstr(c.inspect + " ")
-    Curses.addstr(line + "\n")
+
+    line_final = line.ljust(@COLS - 3) 
+    if index == selected_line
+      line_final = "[" + line_final + "]"
+    else
+      line_final = " " + line_final + " "
+    end
+    Curses.addstr(line_final + "\n")
   end
   Curses.refresh
 
 
-  end
 
-  sleep 0.03
+  sleep 0.05
+  loop_count += 1
 end
