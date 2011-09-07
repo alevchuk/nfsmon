@@ -138,10 +138,11 @@ loop do
     t = t_list[@ROWS - selected_line]
     
     file = "#{LOGFILE_PREFIX}-#{custom_to_log_format(t)}"
-    Curses.clear
-    Curses.refresh
+    Curses.close_screen
     system "less -NS #{file}"
     restart_curses
+    Curses.clear
+    Curses.refresh
   end
 
 
@@ -151,7 +152,7 @@ loop do
   end
 
 
-  new_screen = []
+  Curses.setpos(0,0)
   @expected.each_with_index do |x, index|
     num_stars = @actual[x]
     unfinished = ((index == 0 and num_stars < 58) ? '...' : '')
@@ -160,15 +161,14 @@ loop do
 
     line_final = line.ljust(@COLS - 3) 
     if index == selected_line
-      line_final = "["+ line_final + "]" 
+      Curses.standout
+      Curses.addstr "|" + line_final + "|\n"
+      Curses.standend
     else
-      line_final = " " + line_final + " "
+      Curses.addstr " " + line_final + "\n"
     end
-    new_screen.push line_final
   end
 
-  Curses.setpos(0,0)
-  Curses.addstr new_screen.join("\n")
   get_terminal_dimentions
 
   sleep 0.05
