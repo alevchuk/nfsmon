@@ -76,9 +76,10 @@ end
 
 def get_expected(page)
   t_now = Time.now
-  range = (t_now - @ROWS * 60 * page)..(t_now - @ROWS * 60 * (page - 1))
+  start_time = t_now - @ROWS * 60 * page + (page - 1) * 60
+  end_time   = t_now - @ROWS * 60 * (page - 1) + (page - 1) * 60
 
-  range.step(60).to_a.reverse.collect do |t|
+  (start_time..end_time).step(60).to_a.reverse.collect do |t|
     {:y=>t.year, :month=>t.month, :d=>t.day, :h=>t.hour, :m=>t.min}
   end
 end
@@ -93,7 +94,7 @@ Curses.clear
 Curses.setpos(0,0)
 
 page = PAGE
-selected_line = 0
+selected_line = @ROWS / 2
 loop_count = 0
 @actual = nil
 @expected = nil
@@ -112,25 +113,43 @@ get_terminal_dimentions
 loop do
   c = Curses.getch
 
-  if c == 113 # q
-    restart_curses
-    exit
-  end
+  exit if c == 113 # q
 
-  if c == Curses::Key::PPAGE
-    if page == 1
-      Curses.clear
-      next
-    end
+  if c == Curses::Key::PPAGE and page != 1
     page -= 1
-    read_log(page)
+    @expected = get_expected(page)
+  end
+  
+  if c == Curses::Key::NPAGE
+    page += 1
+    @expected = get_expected(page)
   end
 
-  (page += 1; selected_line = 0; read_log(page)) if c == Curses::Key::NPAGE
-  (page = 1; selected_line = 0; read_log(page)) if c == Curses::Key::HOME
+  if c == Curses::Key::HOME
+    page = 1
+    selected_line = @ROWS
+    @expected = get_expected(page)
+  end
 
-  (selected_line -= 1) if c == Curses::Key::UP and selected_line != 0
-  (selected_line += 1) if c == Curses::Key::DOWN and selected_line != @ROWS
+  if c == Curses::Key::UP
+    if selected_line != 0
+      selected_line -= 1 
+    elsif page != 1
+      selected_line = @ROWS
+      page -= 1
+      @expected = get_expected(page)
+    end
+  end
+
+  if c == Curses::Key::DOWN
+    if selected_line != @ROWS
+      selected_line += 1
+    else
+      selected_line = 0
+      page += 1
+      @expected = get_expected(page)
+    end
+  end
 
 
   if c == 10 or c == 32 # Enter or space
@@ -171,6 +190,6 @@ loop do
 
   get_terminal_dimentions
 
-  sleep 0.05
+  sleep 0.01
   loop_count += 1
 end
