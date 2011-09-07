@@ -1,5 +1,8 @@
 #!/bin/bash
 
+set -u
+set -e
+
 if [ $# -ne 1 ]; then
   (
     echo "ERROR: Invalid number of arguments $#"
@@ -12,12 +15,13 @@ if [ $# -ne 1 ]; then
   exit 1
 fi
 
-MON_HOME=$1
-cd $MON_HOME
+MON_FILE=$1
+
+cd `dirname $MON_FILE`
 
 while :; do
   ls . > /dev/null
-  date "+%Y-%m-%d_%H-%M%t%S" | tee -a log
+  date "+%Y-%m-%d_%H-%M%t%S" | tee -a $MON_FILE
 
   sleep 1
 done
