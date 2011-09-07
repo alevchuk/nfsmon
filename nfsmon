@@ -4,18 +4,12 @@
 require 'curses'
 
 
-
-Curses.noecho # do not show typed keys
-Curses.init_screen
-Curses.stdscr.keypad(true) # enable arrow keys (required for pageup/down)
-Curses.stdscr.nodelay = 1
-
-
 trap("INT"){ exit } 
 
-if ARGV.size != 1
+if ! [1,2].include?(ARGV.size)
   STDERR.puts "ERROR: Invalid number of arguments #{ARGV.size}"
-  STDERR.puts "Usage: #{File.basename(__FILE__)} <probe-directory>"
+  STDERR.puts "Usage: #{File.basename(__FILE__)} <probe-directory>" +
+    " [<page>]"
   STDERR.puts ""
   STDERR.puts "  <probe-directory>  is where pstmd is running"
   exit 1
@@ -23,6 +17,18 @@ end
 PROBE_DIR = File.directory?(ARGV[0]) ? ARGV[0] : File.dirname(ARGV[0])
 LOGFILE_PREFIX = "/srv/projects/zeus_log/nfs-fileio"
 
+PAGE = ARGV[1].nil? ? 1 : ARGV[1].to_i
+
+def restart_curses
+  Curses.noecho # do not show typed keys
+  Curses.init_screen
+  Curses.stdscr.keypad(true) # enable arrow keys (for pageup/down)
+  Curses.stdscr.nodelay = 1
+  Curses.clear
+  Curses.setpos(0,0)
+  Curses.refresh
+end
+restart_curses
 
 def get_terminal_dimentions
   @COLS = `tput cols`.to_i
@@ -86,7 +92,7 @@ end
 Curses.clear
 Curses.setpos(0,0)
 
-page = 1
+page = PAGE
 selected_line = 0
 loop_count = 0
 @actual = nil
@@ -98,13 +104,18 @@ def read_log(page)
   @expected = get_expected(page)
 end
 
+read_log(page)
+
+
+get_terminal_dimentions
+
 loop do
-
-  get_terminal_dimentions
-
   c = Curses.getch
 
-  exit 0 if c == 113 # q
+  if c == 113 # q
+    restart_curses
+    exit
+  end
 
   if c == Curses::Key::PPAGE
     if page == 1
@@ -127,9 +138,10 @@ loop do
     t = t_list[@ROWS - selected_line]
     
     file = "#{LOGFILE_PREFIX}-#{custom_to_log_format(t)}"
+    Curses.clear
+    Curses.refresh
     system "less -NS #{file}"
-
-    Curses.stdscr.keypad(true) # Resore Curses environment
+    restart_curses
   end
 
 
@@ -138,27 +150,26 @@ loop do
     read_log(page)
   end
 
-  Curses.clear
-  Curses.setpos(0,0)
 
+  new_screen = []
   @expected.each_with_index do |x, index|
     num_stars = @actual[x]
     unfinished = ((index == 0 and num_stars < 58) ? '...' : '')
     line = "#{x[:h].rj}:#{x[:m].rj} " + "*" * num_stars + unfinished +
       " #{@actual[x].to_s.rjust(2,'0')}"
-    #Curses.addstr(c.inspect + " ")
 
     line_final = line.ljust(@COLS - 3) 
     if index == selected_line
-      line_final = "[" + line_final + "]"
+      line_final = "["+ line_final + "]" 
     else
       line_final = " " + line_final + " "
     end
-    Curses.addstr(line_final + "\n")
+    new_screen.push line_final
   end
-  Curses.refresh
 
-
+  Curses.setpos(0,0)
+  Curses.addstr new_screen.join("\n")
+  get_terminal_dimentions
 
   sleep 0.05
   loop_count += 1
