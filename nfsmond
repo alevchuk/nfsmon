@@ -21,7 +21,7 @@ cd `dirname $MON_FILE`
 
 while :; do
   ls . > /dev/null
-  date "+%Y-%m-%d_%H-%M%t%S" | tee -a $MON_FILE
+  date "+%Y-%m-%d_%H-%M%t%S" | tee -a `basename $MON_FILE`
 
   sleep 1
 done
