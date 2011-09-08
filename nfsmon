@@ -13,7 +13,7 @@ if ! [1,2].include?(ARGV.size)
     " [<jump-to-time>]"
   STDERR.puts ""
   STDERR.puts "  <probe-log-file>  Log file where pstmd is probing"
-  STDERR.puts " [<jump-to-date>]   Date in YYYY-MM-DD format (Optional)"
+  STDERR.puts "  [<jump-to-date>]  Date in YYYY-MM-DD format (Optional)"
   exit 1
 end
 PROBE_FILE = ARGV[0]
@@ -229,9 +229,10 @@ loop do
 
   cut_size = @COLS - 30
   corner_size = @COLS - 19
-  cut_test = PROBE_FILE.size > cut_size
-  start_of_cut = cut_test ? PROBE_FILE.size - cut_size : 0
-  bottom_right_corner = PROBE_FILE[start_of_cut..-1]
+  probe_file = PROBE_FILE.sub(ENV['HOME'], '~')
+  cut_test = probe_file.size > cut_size
+  start_of_cut = cut_test ? probe_file.size - cut_size : 0
+  bottom_right_corner = probe_file[start_of_cut..-1]
   bottom_right_corner = "...#{bottom_right_corner}" if cut_test
   Curses.addstr \
     " #{custom_to_s(l)} #{bottom_right_corner.rjust(corner_size)}\n"
