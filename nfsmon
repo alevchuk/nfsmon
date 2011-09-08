@@ -3,6 +3,7 @@
 
 require 'curses'
 
+UPDATE_FREQ = 80 # 120 would be every minuted
 
 trap("INT"){ exit } 
 
@@ -148,28 +149,25 @@ read_log(page)
 
 get_terminal_dimentions
 
+no_key_pressed_count = 0
+@sleepy_mode = true
 loop do
   c = Curses.getch
 
   exit if c == 113 # q
 
+  @no_key_pressed = false
   if c == Curses::Key::PPAGE and page != 1
     page -= 1
     @expected = get_expected(page)
-  end
-  
-  if c == Curses::Key::NPAGE
+  elsif c == Curses::Key::NPAGE
     page += 1
     @expected = get_expected(page)
-  end
-
-  if c == Curses::Key::HOME
+  elsif c == Curses::Key::HOME
     page = 1
     selected_line = 0
     @expected = get_expected(page)
-  end
-
-  if c == Curses::Key::UP or c == 107 # up k
+  elsif c == Curses::Key::UP or c == 107 # up k
     if selected_line != 0
       selected_line -= 1 
     elsif page != 1
@@ -177,9 +175,7 @@ loop do
       page -= 1
       @expected = get_expected(page)
     end
-  end
-
-  if c == Curses::Key::DOWN or c == 106 # down j
+  elsif c == Curses::Key::DOWN or c == 106 # down j
     if selected_line != @ROWS - 1
       selected_line += 1
     else
@@ -187,6 +183,8 @@ loop do
       page += 1
       @expected = get_expected(page)
     end
+  else
+    @no_key_pressed = true
   end
 
 
@@ -204,7 +202,7 @@ loop do
 
 
   # Computationally intensive operation
-  if loop_count % 100 == 0 and page == 1
+  if loop_count % UPDATE_FREQ == 0 and page == 1
     read_log(page)
   end
 
@@ -212,9 +210,11 @@ loop do
   Curses.setpos(0,0)
   @expected.each_with_index do |x, index|
     num_stars = @actual[x]
-    unfinished = ((page == 1 and index == 0 and num_stars < 58) ? '...' : '')
+    unfinished = ((page == 1 and index == 0) ? '...' : '')
+    numeric_label = (unfinished == "..." and num_stars > 54) ? '' : \
+      @actual[x].to_s.rjust(2,'0')
     line = "#{x[:h].rj}:#{x[:m].rj} " + "*" * (num_stars/2) + unfinished +
-      " #{@actual[x].to_s.rjust(2,'0')}"
+      " #{numeric_label}"
 
     line_final = line.ljust(30 + 9) 
     if index == selected_line
@@ -230,6 +230,21 @@ loop do
 
   get_terminal_dimentions
 
-  sleep 0.01
-  loop_count += 1
+  if @no_key_pressed
+    if @sleepy_mode
+      sleep 0.5 
+      loop_count += 1
+    else
+      sleep 0.1
+      no_key_pressed_count += 1
+      if no_key_pressed_count == 50
+        @sleepy_mode = true
+      end
+    end
+
+  else # Key was pressed just now
+    @sleepy_mode = false
+    no_key_pressed_count = 0
+    sleep 0.01
+  end
 end
