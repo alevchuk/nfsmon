@@ -213,10 +213,10 @@ loop do
   @expected.each_with_index do |x, index|
     num_stars = @actual[x]
     unfinished = ((page == 1 and index == 0 and num_stars < 58) ? '...' : '')
-    line = "#{x[:h].rj}:#{x[:m].rj} " + "*" * num_stars + unfinished +
+    line = "#{x[:h].rj}:#{x[:m].rj} " + "*" * (num_stars/2) + unfinished +
       " #{@actual[x].to_s.rjust(2,'0')}"
 
-    line_final = line.ljust(60 + 9) 
+    line_final = line.ljust(30 + 9) 
     if index == selected_line
       Curses.standout
       Curses.addstr "|" + line_final + "|\n"
