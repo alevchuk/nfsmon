@@ -226,7 +226,15 @@ loop do
     end
   end
   l = @expected.last
-  Curses.addstr " #{custom_to_s(l)}\n"
+
+  cut_size = @COLS - 30
+  corner_size = @COLS - 19
+  cut_test = PROBE_FILE.size > cut_size
+  start_of_cut = cut_test ? PROBE_FILE.size - cut_size : 0
+  bottom_right_corner = PROBE_FILE[start_of_cut..-1]
+  bottom_right_corner = "...#{bottom_right_corner}" if cut_test
+  Curses.addstr \
+    " #{custom_to_s(l)} #{bottom_right_corner.rjust(corner_size)}\n"
 
   get_terminal_dimentions
 
