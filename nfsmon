@@ -144,8 +144,6 @@ def read_log(page)
   @expected = get_expected(page)
 end
 
-read_log(page)
-
 
 get_terminal_dimentions
 
@@ -160,13 +158,19 @@ loop do
   if c == Curses::Key::PPAGE and page != 1
     page -= 1
     @expected = get_expected(page)
+    if page == 1
+      read_log(1)
+    end
+
   elsif c == Curses::Key::NPAGE
     page += 1
     @expected = get_expected(page)
+
   elsif c == Curses::Key::HOME
     page = 1
     selected_line = 0
     @expected = get_expected(page)
+
   elsif c == Curses::Key::UP or c == 107 # up k
     if selected_line != 0
       selected_line -= 1 
@@ -174,7 +178,11 @@ loop do
       selected_line = @ROWS - 1
       page -= 1
       @expected = get_expected(page)
+      if page == 1
+        read_log(1)
+      end
     end
+
   elsif c == Curses::Key::DOWN or c == 106 # down j
     if selected_line != @ROWS - 1
       selected_line += 1
@@ -183,12 +191,8 @@ loop do
       page += 1
       @expected = get_expected(page)
     end
-  else
-    @no_key_pressed = true
-  end
 
-
-  if c == 10 or c == 32 # Enter or space
+  elsif c == 10 or c == 32 # Enter or space
     t_list = @expected.sort{|i1,i2| custom_to_s(i1) <=> custom_to_s(i2)}
     t = t_list[@ROWS - 1 - selected_line]
     
@@ -198,12 +202,18 @@ loop do
     restart_curses
     Curses.clear
     Curses.refresh
+
+  else
+    @no_key_pressed = true
   end
+
+
 
 
   # Computationally intensive operation
   if loop_count % UPDATE_FREQ == 0 and page == 1
     read_log(page)
+    #Curses.refresh
   end
 
 
@@ -211,8 +221,7 @@ loop do
   @expected.each_with_index do |x, index|
     num_stars = @actual[x]
     unfinished = ((page == 1 and index == 0) ? '...' : '')
-    numeric_label = (unfinished == "..." and num_stars > 54) ? '' : \
-      @actual[x].to_s.rjust(2,'0')
+    numeric_label = (unfinished == "...") ? '' : @actual[x].to_s.rjust(2,'0')
     line = "#{x[:h].rj}:#{x[:m].rj} " + "*" * (num_stars/2) + unfinished +
       " #{numeric_label}"
 
