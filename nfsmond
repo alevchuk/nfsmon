@@ -18,10 +18,23 @@ fi
 MON_FILE=$1
 
 cd `dirname $MON_FILE`
+mon_file_basename=`basename $MON_FILE`
 
 while :; do
-  ls . > /dev/null
-  date "+%Y-%m-%d_%H-%M%t%S" | tee -a `basename $MON_FILE`
 
+  date "+%Y-%m-%d_%H-%M%t%S" | tee -a $mon_file_basename
+
+
+  # Collision detection part 2 of 2
+  before_sleep=`cat $mon_file_basename`
+  
+  ls . > /dev/null
   sleep 1
+
+  # Collision detection part 1 of 2
+  after_sleep=`cat $mon_file_basename`
+  if [ "$before_sleep" != "$after_sleep" ] ; then
+    break
+  fi
+
 done
