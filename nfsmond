@@ -8,7 +8,9 @@ if [ $# -ne 1 ]; then
     echo "ERROR: Invalid number of arguments $#"
     echo "Usage: $0 <prob-directory>"
     echo ""
-    echo "<prob-directory>  is where you want pstmd to ls and write the log"
+    echo "<prob-directory>  is where you want the daemon time ls and log"
+    echo ""
+    echo "The daemon has collision detection so it is safe to CRON them."
 
   ) >&2
 

@@ -1,8 +1,8 @@
 <h2>nfsmond</h2>
 <pre>
-Usage: ./nfsmond <prob-directory>
+<prob-directory>  is where you want the daemon time ls and log
 
-<prob-directory>  is where you want pstmd to ls and write the log
+The daemon has collision detection so it is safe to CRON them.
 </pre>
 
 <h2>nfsmon</h2>
