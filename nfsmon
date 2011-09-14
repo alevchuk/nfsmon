@@ -7,13 +7,28 @@ UPDATE_FREQ = 80 # 120 would be every minuted
 
 trap("INT"){ exit } 
 
-if ! [1,2].include?(ARGV.size)
+MY_BASE_NAME = File.basename(__FILE__)
+
+if ARGV.empty?
+  config_file = File.expand_path("~/.#{MY_BASE_NAME}")
+  if File.exists? config_file
+    ARGV[0] =
+      File.open(config_file){|f| File.expand_path(f.readlines[0])}.chomp
+  end
+end
+
+if ! [1,2].include?(ARGV.size) or ARGV.include? "-h" or ARGV.include? "--help"
   STDERR.puts "ERROR: Invalid number of arguments #{ARGV.size}"
   STDERR.puts "Usage: #{File.basename(__FILE__)} <probe-log-file>" +
     " [<jump-to-time>]"
   STDERR.puts ""
   STDERR.puts "  <probe-log-file>  Log file where pstmd is probing"
   STDERR.puts "  [<jump-to-date>]  Date in YYYY-MM-DD format (Optional)"
+  STDERR.puts ""
+  STDERR.puts "You can also put the probe filename into ~/.nfsmon then argument"
+  STDERR.puts "<probe-log-file> becomes optional. To configure multiple probe"
+  STDERR.puts "locations create symlinks to nfsmon executable. For example:"
+  STDERR.puts "`ln -s nfsmon nfsmon-b` and put config into ~/.nfsmon-b"
   exit 1
 end
 PROBE_FILE = ARGV[0]
