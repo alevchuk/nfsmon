@@ -1,12 +1,12 @@
 <h2>nfsmond</h2>
-<pre>
+```
 <prob-directory>  is where you want the daemon time ls and log
 
 The daemon has collision detection so it is safe to CRON them.
-</pre>
+```
 
 <h2>nfsmon</h2>
-<pre>
+```
 Usage: nfsmon <probe-log-file> [<jump-to-time>]
 
   <probe-log-file>  Log file where pstmd is probing
@@ -16,7 +16,7 @@ You can also put the probe filename into ~/.nfsmon then argument
 <probe-log-file> becomes optional. To configure multiple probe
 locations create symlinks to nfsmon executable. For example:
 `ln -s nfsmon nfsmon-b` and put config into ~/.nfsmon-b
-</pre>
+```
 
 
 <h2>Screenshot</h2>
