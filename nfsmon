@@ -173,9 +173,9 @@ loop do
   if c == Curses::Key::PPAGE and page != 1
     page -= 1
     @expected = get_expected(page)
-    if page == 1
-      read_log(1)
-    end
+    #if page == 1
+    #  read_log(1)
+    #end
 
   elsif c == Curses::Key::NPAGE
     page += 1
@@ -193,9 +193,9 @@ loop do
       selected_line = @ROWS - 1
       page -= 1
       @expected = get_expected(page)
-      if page == 1
-        read_log(1)
-      end
+      #if page == 1
+      #  read_log(1)
+      #end
     end
 
   elsif c == Curses::Key::DOWN or c == 106 # down j
