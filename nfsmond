@@ -18,8 +18,10 @@ if [ $# -ne 1 ]; then
 fi
 
 MON_FILE=$1
+MON_FILE_DIR=$(dirname $MON_FILE)
 
-cd `dirname $MON_FILE`
+mkdir -p $MON_FILE_DIR 2> /dev/null && true
+cd $MON_FILE_DIR
 mon_file_basename=`basename $MON_FILE`
 
 last_cleanup="$mon_file_basename-last-cleanup"
