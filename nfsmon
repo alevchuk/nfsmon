@@ -213,7 +213,7 @@ loop do
     
     file = "#{LOGFILE_PREFIX}-#{custom_to_log_format(t)}"
     Curses.close_screen
-    system "less -NS #{file}"
+    system "export LESS=''; less -NS #{file}"
     restart_curses
     Curses.clear
     Curses.refresh
