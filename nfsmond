@@ -35,8 +35,9 @@ while :; do
   # Cleanup every hour
   if [ $(expr `date +%s` - `stat -c %Y $last_cleanup`) -gt 3600 ]; then
     # Keep only (1 month + slowdonwns) of logs, short range for testing
-    tail -n 2629743 $mon_file_basename > $mon_file_basename-tmp
-    mv $mon_file_basename{-tmp,}
+    tmpfile=$(mktemp)
+    tail -n 2629743 $mon_file_basename > $tmpfile
+    mv $tmpfile $mon_file_basename
     touch $last_cleanup
   fi
 
