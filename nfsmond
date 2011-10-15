@@ -30,7 +30,7 @@ last_cleanup="$mon_file_basename-last-cleanup"
 while :; do
 
   # Log
-  date "+%Y-%m-%d_%H-%M%t%S" | tee -a $mon_file_basename
+  date "+%Y-%m-%d_%H-%M%t%S" | tee -a $mon_file_basename > /dev/null
 
   # Cleanup every hour
   if [ $(expr `date +%s` - `stat -c %Y $last_cleanup`) -gt 3600 ]; then
